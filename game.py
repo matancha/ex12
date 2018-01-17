@@ -25,6 +25,9 @@ class Game:
     def get_winning_path(self):
         return self.__winning_path
 
+    def is_game_over(self):
+        return self.__winner
+
     def make_move(self, column):
         if self.__winner:
             raise Exception(Game.ERROR_ILLEGAL_MOVE)
