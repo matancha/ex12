@@ -61,7 +61,7 @@ class Game:
         paths.append(row_path)
         column_path =[(self.__last_move[0], row) for row in range(len(self.board[0]))]
         paths.append(column_path)
-        
+
         right_diag = self.path_in_direction(Game.RIGHT_DIAG_DIRECTION)
         left_diag = self.path_in_direction(Game.LEFT_DIAG_DIRECTION)
         paths.append(right_diag)
@@ -118,12 +118,12 @@ class Game:
         return board
 
 
-game = Game()
-game.make_move(3)
-while game.get_winner() is None:
- game.set_current_player()
- for row in game.board:
-     print(row, end="\n")
- next_move = input('Column to place in?')
- game.make_move(int(next_move))
+# game = Game()
+# game.make_move(3)
+# while game.get_winner() is None:
+#  game.set_current_player()
+#  for row in game.board:
+#      print(row, end="\n")
+#  next_move = input('Column to place in?')
+#  game.make_move(int(next_move))
 
