@@ -1,3 +1,5 @@
+
+
 class Game:
 
     PLAYER_ONE = 0
@@ -6,40 +8,47 @@ class Game:
     NUM_COLUMN=8
     NUM_ROWS=6
     ERROR_ILLEGAL_MOVE= "illegal move"
+    WINNING_STREAK = 4
+    RIGHT_DIAG_DIRECTION = (-1, 1)
+    LEFT_DIAG_DIRECTION = (-1,-1)
 
     def __init__(self):
         self.board = self.create_board()
-        self.curent_player=Game.PLAYER_ONE
-        self.__last_move=None
-        self.__winner=False
-        self.__path_wins=[]
+        self.current_player = Game.PLAYER_ONE
+        self.__last_move = None
+        self.__winner = False
+        self.__winning_path = []
 
     def get_last_move(self):
         return self.__last_move
+
+    def get_winning_path(self):
+        return self.__winning_path
+
     def make_move(self, column):
         if self.__winner:
             raise Exception(Game.ERROR_ILLEGAL_MOVE)
-        for row in range(len(self.board[column]) - 1 ,-1,-1):
+        for row in range(len(self.board[column])-1, -1, -1):
             if self.board[column][row] is None:
                 self.board[column][row] = self.get_current_player()
                 self.__last_move =(column,row)
                 break
-            if row==0:
+            if row == 0:
                 #TODO: New error object
                 raise Exception(Game.ERROR_ILLEGAL_MOVE)
 
     def get_winner(self):
         paths = self.get_possible_paths()
         for path in paths:
-            current_counter=0
-            for disk in path:
-                if disk == self.curent_player:
-                    current_counter+=1
-                    if current_counter == 4:
-                        self.__winner=True
-                        return self.curent_player
+            self.__winning_path = []
+            for column, row in path:
+                if self.board[column][row] == self.current_player:
+                    self.__winning_path.append((column, row))
+                    if len(self.__winning_path) == Game.WINNING_STREAK:
+                        self.__winner = True
+                        return self.current_player
                 else:
-                    current_counter=0
+                    self.__winning_path = []
         for column in self.board:
             for disk in column:
                 if disk is None:
@@ -48,70 +57,73 @@ class Game:
 
     def get_possible_paths(self):
         paths = []
-
-        row_path = [self.board[column][self.__last_move[1]] for column in range(len(self.board))]
+        row_path = [(column, self.__last_move[1]) for column in range(len(self.board))]
         paths.append(row_path)
-        column_path =[self.board[self.__last_move[0]][row] for row in range(len(self.board[0]))]
+        column_path =[(self.__last_move[0], row) for row in range(len(self.board[0]))]
         paths.append(column_path)
-        # diag1=[]
-        # diag2=[]
-        # row=self.__last_move[1]
-        # column=self.__last_move[0]
-        # while self.board[column][row]!=None and row!=-1 and column!=-1:
-        #     row-=1
-        #     column-=1
-        #     print(self.board[row])
-        # while row!=self.NUM_ROWS-1 and column!=self.NUM_COLUMN-1:
-        #     diag1.append(self.board[column][row])
-        #     row+=1
-        #     column+=1
-        # paths.append(diag1)
-        # row=self.__last_move[1]
-        # column=self.__last_move[0]
-        # while self.board[column][row]!=None and column!=self.NUM_COLUMN and row!=-1:
-        #     row-=1
-        #     column+=1
-        # while row!=self.NUM_COLUMN-1 and column!=self.NUM_COLUMN:
-        #     diag2.append((self.board[column][row]))
-        #     row+=1
-        #     column-=1
-        # paths.append(diag2)
+        
+        right_diag = self.path_in_direction(Game.RIGHT_DIAG_DIRECTION)
+        left_diag = self.path_in_direction(Game.LEFT_DIAG_DIRECTION)
+        paths.append(right_diag)
+        paths.append(left_diag)
+
         return paths
 
+    def path_in_direction(self, direction):
+        direction_path = []
+        self.get_half_path(self.__last_move, direction_path, direction)
+        self.get_half_path(self.__last_move, direction_path, direction, reversed=True)
+        return direction_path
 
+    def get_half_path(self, coordinate_tuple, path, direction, reversed=False):
+        if not self.is_in_board(coordinate_tuple):
+            return
 
+        if reversed is True:
+            if coordinate_tuple not in path:
+                path.append(coordinate_tuple)
+            self.get_half_path((coordinate_tuple[0]-direction[0], coordinate_tuple[1]-direction[1]), path,
+                               direction, reversed)
+        else:
+            self.get_half_path((coordinate_tuple[0]+direction[0], coordinate_tuple[1]+direction[1]), path,
+                               direction, reversed)
+            if coordinate_tuple not in path:
+                path.append(coordinate_tuple)
+
+    def is_in_board(self, coordinate_tuple):
+        if (coordinate_tuple[0] >= 0 and coordinate_tuple[0] <= len(self.board)-1
+            and coordinate_tuple[1] >= 0 and coordinate_tuple[1] <= len(self.board[0])-1):
+            return True
+        return False
 
     def get_player_at(self, col, row):
         return self.board[col][row]
 
     def get_current_player(self):
-        return self.curent_player
+        return self.current_player
 
     def set_current_player(self):
         if self.get_current_player()==Game.PLAYER_ONE:
-            self.curent_player=Game.PLAYER_TWO
+            self.current_player=Game.PLAYER_TWO
         else:
-            self.curent_player=Game.PLAYER_ONE
-
-
+            self.current_player=Game.PLAYER_ONE
 
     def create_board(self):
-        board=[]
+        board = []
         for column in range(Game.NUM_COLUMN):
-            row=[]
+            row = []
             for rows in range(Game.NUM_ROWS):
                 row.append(None)
             board.append(row)
         return board
 
 
-# game = Game()
-# game.make_move(3)
-# while game.get_winner() is None:
-#     game.set_current_player()
-#     print(game.get_possible_paths())
-#     for row in game.board:
-#         print(row, end="\n")
-#     next_move = input('Column to place in?')
-#     game.make_move(int(next_move))
+game = Game()
+game.make_move(3)
+while game.get_winner() is None:
+ game.set_current_player()
+ for row in game.board:
+     print(row, end="\n")
+ next_move = input('Column to place in?')
+ game.make_move(int(next_move))
 
