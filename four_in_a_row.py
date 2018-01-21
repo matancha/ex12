@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter.messagebox as messagebox
 from game import Game
 import math
 from communicator import Communicator
@@ -11,9 +12,11 @@ DISK_SIZE=100
 
 class GUI:
 
-    def __init__(self, root, game):
+    def __init__(self, root, game, communicator, player):
         self.root = root
         self.game = game
+        self.communicator = communicator
+        self.player = player
 
         self.canvas = Canvas(self.root, bg="white", height=(Game.NUM_ROWS + 1) * DISK_SIZE,
                              width=Game.NUM_COLUMN * DISK_SIZE)
@@ -23,6 +26,7 @@ class GUI:
         self.canvas.bind("<Leave>", self.out_of)
         self.canvas.pack()
 
+        self.communicator.bind_action_to_message(self.callback)
         self.dict_of_disks = {}
         self.list_of_items = []
 
@@ -36,12 +40,29 @@ class GUI:
                 self.canvas.create_oval((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill="white")
 
     def callback(self, event):
-        column = self.calculating_column(event.x)
-        self.game.make_move(column)
-
         last_turn = self.game.get_last_move()
+        if hasattr(event, 'x'):
+            column = self.calculating_column(event.x)
+            if last_turn is None:
+                if self.player != self.game.PLAYER_ONE:
+                    messagebox.showinfo("Can't do this", 'what')
+                    return
+            elif self.game.get_player_at(last_turn[0], last_turn[1]) == self.player:
+                messagebox.showinfo("Can't do this", 'what')
+                return
+        else:
+            column = int(event[-1])
+
+        try:
+            self.game.make_move(column)
+        except ValueError:
+            messagebox.showinfo('illegal move', 'try again!')
+
+        if hasattr(event, 'x'):
+            self.communicator.send_message("Put disk in column {0}".format(column))
+
         color = self.get_color(self.game.get_current_player())
-        start_column, start_row = self.get_coordinates(last_turn)
+        start_column, start_row = self.get_coordinates(self.game.get_last_move())
         disk = self.canvas.create_oval((start_column, start_row),
                                        (start_column + DISK_SIZE, start_row + DISK_SIZE), fill=color)
         self.dict_of_disks[start_column, start_row] = disk
@@ -52,19 +73,19 @@ class GUI:
             for coord in self.game.get_winning_path():
                 disk = self.dict_of_disks[self.get_coordinates(coord)]
                 self.canvas.itemconfig(disk, fill="red")
-            Message(self.root, text=WIN_MSG.format(self.game.get_winner() + 1))
+            messagebox.showinfo('Game over!', WIN_MSG.format(self.game.get_winner() + 1))
             self.canvas.delete(self.list_of_items[0])
             self.list_of_items.pop()
 
         self.game.set_current_player()
-        if not self.game.is_game_over():
-            self.canvas.delete(self.list_of_items[-1])
-            self.list_of_items.pop()
-            item = self.canvas.create_oval(
-                (self.calculating_column(event.x) * DISK_SIZE, 0,
-                 self.calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
-                fill=self.get_color(self.game.get_current_player()))
-            self.list_of_items.append(item)
+        # if not self.game.is_game_over():
+        #     self.canvas.delete(self.list_of_items[-1])
+        #     self.list_of_items.pop()
+        #     item = self.canvas.create_oval(
+        #         (self.calculating_column(event.x) * DISK_SIZE, 0,
+        #          self.calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
+        #         fill=self.get_color(self.game.get_current_player()))
+        #     self.list_of_items.append(item)
 
     def get_color(self, current_player):
         return COLOR_PLAYER1 if current_player == self.game.PLAYER_ONE else COLOR_PLAYER2
@@ -98,19 +119,35 @@ class GUI:
 
 
 def check_args(arg_list):
-    pass
+    if arg_list[1] not in ['ai', 'human']:
+        return False
+
+    return True
 
 
 def main(argv):
-    # if not check_args(argv):
-    #     return
-    # player_type = argv[1]
-    # port = argv[2]
-    # if len(argv) == 4:
-    #     ip = argv[3]
+    if not check_args(argv):
+        return
+    client = False
     game = Game()
     root = Tk()
-    GUI(root, game)
+
+    player_type = argv[1]
+    port = int(argv[2])
+    if len(argv) == 4:
+        ip = argv[3]
+        client = True
+
+    if client:
+        communicator = Communicator(root, port, ip)
+        player = game.PLAYER_TWO
+    else:
+        communicator = Communicator(root, port)
+        player = game.PLAYER_ONE
+
+    communicator.connect()
+
+    GUI(root, game, communicator, player)
     root.mainloop()
 
 if __name__ == '__main__':
