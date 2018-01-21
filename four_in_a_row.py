@@ -3,6 +3,7 @@ import tkinter.messagebox as messagebox
 from game import Game
 import math
 from communicator import Communicator
+from ai import AI
 
 WIN_MSG = 'Player {0} wins!'
 COLOR_PLAYER1="green"
@@ -12,11 +13,12 @@ DISK_SIZE=100
 
 class GUI:
 
-    def __init__(self, root, game, communicator, player):
+    def __init__(self, root, game, communicator, player, ai=None):
         self.root = root
         self.game = game
         self.communicator = communicator
         self.player = player
+        self.ai = ai
 
         self.canvas = Canvas(self.root, bg="white", height=(Game.NUM_ROWS + 1) * DISK_SIZE,
                              width=Game.NUM_COLUMN * DISK_SIZE)
@@ -50,15 +52,17 @@ class GUI:
             elif self.game.get_player_at(last_turn[0], last_turn[1]) == self.player:
                 messagebox.showinfo("Can't do this", 'what')
                 return
-        else:
+        elif len(event) > 1:
             column = int(event[-1])
+        else:
+            column = int(event)
 
         try:
             self.game.make_move(column)
         except ValueError:
             messagebox.showinfo('illegal move', 'try again!')
 
-        if hasattr(event, 'x'):
+        if hasattr(event, 'x') or len(event) == 1:
             self.communicator.send_message("Put disk in column {0}".format(column))
 
         color = self.get_color(self.game.get_current_player())
@@ -77,7 +81,17 @@ class GUI:
             self.canvas.delete(self.list_of_items[0])
             self.list_of_items.pop()
 
-        self.game.set_current_player()
+        if self.ai is None:
+            self.game.set_current_player()
+
+        if self.ai is not None:
+            if self.game.get_player_at(self.game.get_last_move()[0], self.game.get_last_move()[1])\
+                != self.player:
+                self.game.set_current_player()
+                self.ai.find_legal_move(self.game, self.callback)
+            else:
+                self.game.set_current_player()
+
         # if not self.game.is_game_over():
         #     self.canvas.delete(self.list_of_items[-1])
         #     self.list_of_items.pop()
@@ -137,18 +151,27 @@ def main(argv):
     if len(argv) == 4:
         ip = argv[3]
         client = True
+    if player_type == 'ai':
+        ai = AI()
 
     if client:
         communicator = Communicator(root, port, ip)
         player = game.PLAYER_TWO
+        if player_type == 'human':
+            GUI(root, game, communicator, player)
+        else:
+            GUI(root, game, communicator, player, ai)
     else:
         communicator = Communicator(root, port)
         player = game.PLAYER_ONE
+        if player_type == 'human':
+             GUI(root, game, communicator, player)
+        else:
+             GUI(root, game, communicator, player, ai)
 
     communicator.connect()
-
-    GUI(root, game, communicator, player)
     root.mainloop()
+
 
 if __name__ == '__main__':
     main(sys.argv)
