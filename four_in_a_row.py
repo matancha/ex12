@@ -33,20 +33,20 @@ class GUI:
 
         self.__canvas = Canvas(self.__root, bg=BACKGROUND_COLOR, height=(Game.NUM_ROWS + 1) * DISK_SIZE,
                                width=Game.NUM_COLUMNS * DISK_SIZE)
-        self.__canvas.bind('<Button-1>', self.place_disk)
+        self.__canvas.bind('<Button-1>', self.play_turn)
         self.__canvas.bind("<Enter>", self.entering)
         self.__canvas.bind("<Motion>", self.move)
         self.__canvas.bind("<Leave>", self.out_of)
         self.__canvas.pack()
 
-        self.__communicator.bind_action_to_message(self.place_disk_message)
+        self.__communicator.bind_action_to_message(self.play_turn_message)
         self.__dict_of_disks = {}
         self.__list_of_items = []
 
         self._create_initial_screen()
 
         if self.__ai is not None and self.__game.get_current_player() == self._player:
-            self.__ai.find_legal_move(self.__game, self.place_disk_ai)
+            self.__ai.find_legal_move(self.__game, self.play_turn_ai)
 
     def _create_initial_screen(self):
 
@@ -55,7 +55,7 @@ class GUI:
                 self.__canvas.create_rectangle((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill=BOARD_COLOR)
                 self.__canvas.create_oval((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill=EMPTY_SPACE_COLOR)
 
-    def place_disk(self, event):
+    def play_turn(self, event):
         last_turn = self.__game.get_last_move()
         column = self.calculating_column(event.x)
         if self.__ai is not None:
@@ -78,7 +78,7 @@ class GUI:
         self._handle_end_game()
         self.__game.set_current_player()
 
-    def place_disk_ai(self, column):
+    def play_turn_ai(self, column):
 
         self.__game.make_move(int(column))
         self._place_disk_on_board()
@@ -86,7 +86,7 @@ class GUI:
         self._handle_end_game()
         self.__game.set_current_player()
 
-    def place_disk_message(self, message):
+    def play_turn_message(self, message):
 
         column = int(message[-1])
         self.__game.make_move(int(column))
@@ -95,7 +95,7 @@ class GUI:
         self.__game.set_current_player()
 
         if self.__ai is not None:
-            self.__ai.find_legal_move(self.__game, self.place_disk_ai)
+            self.__ai.find_legal_move(self.__game, self.play_turn_ai)
 
     def _handle_end_game(self):
 
