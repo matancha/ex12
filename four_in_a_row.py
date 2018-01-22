@@ -5,135 +5,159 @@ import math
 from communicator import Communicator
 from ai import AI
 
+PLAYER_TYPE_ARGUMENT = 1
+PORT_ARGUMENT = 2
+IP_ARGUMENT = 3
+MAXIMUM_PORT_NUMBER = 65535
+
+# Options are: "white", "black", "red", "green", "blue", "cyan", "yellow", and "magenta"
+BOARD_COLOR = "orange"
+EMPTY_SPACE_COLOR = "white"
+BACKGROUND_COLOR = "white"
+WINNING_DISK_COLOR = "red"
+COLOR_PLAYER_ONE = "green"
+COLOR_PLAYER_2 = "yellow"
+
 WIN_MSG = 'Player {0} wins!'
-COLOR_PLAYER1="green"
-COLOR_PLAYER2="yellow"
-DISK_SIZE=100
+DISK_SIZE = 100
 
 
 class GUI:
 
     def __init__(self, root, game, communicator, player, ai=None):
-        self.root = root
-        self.game = game
-        self.communicator = communicator
-        self.player = player
-        self.ai = ai
+        self.__root = root
+        self.__game = game
+        self.__communicator = communicator
+        self._player = player
+        self.__ai = ai
 
-        self.canvas = Canvas(self.root, bg="white", height=(Game.NUM_ROWS + 1) * DISK_SIZE,
-                             width=Game.NUM_COLUMN * DISK_SIZE)
-        self.canvas.bind('<Button-1>', self.callback)
-        self.canvas.bind("<Enter>", self.entering)
-        self.canvas.bind("<Motion>", self.move)
-        self.canvas.bind("<Leave>", self.out_of)
-        self.canvas.pack()
+        self.__canvas = Canvas(self.__root, bg=BACKGROUND_COLOR, height=(Game.NUM_ROWS + 1) * DISK_SIZE,
+                               width=Game.NUM_COLUMNS * DISK_SIZE)
+        self.__canvas.bind('<Button-1>', self.place_disk)
+        self.__canvas.bind("<Enter>", self.entering)
+        self.__canvas.bind("<Motion>", self.move)
+        self.__canvas.bind("<Leave>", self.out_of)
+        self.__canvas.pack()
 
-        self.communicator.bind_action_to_message(self.callback)
-        self.dict_of_disks = {}
-        self.list_of_items = []
+        self.__communicator.bind_action_to_message(self.place_disk_message)
+        self.__dict_of_disks = {}
+        self.__list_of_items = []
 
-        self.create_initial_screen()
+        self._create_initial_screen()
 
-    def create_initial_screen(self):
+        if self.__ai is not None and self.__game.get_current_player() == self._player:
+            self.__ai.find_legal_move(self.__game, self.place_disk_ai)
+
+    def _create_initial_screen(self):
 
         for row in range(DISK_SIZE, (Game.NUM_ROWS + 1) * DISK_SIZE, DISK_SIZE):
-            for column in range(0, Game.NUM_COLUMN * DISK_SIZE, DISK_SIZE):
-                self.canvas.create_rectangle((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill="orange")
-                self.canvas.create_oval((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill="white")
+            for column in range(0, Game.NUM_COLUMNS * DISK_SIZE, DISK_SIZE):
+                self.__canvas.create_rectangle((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill=BOARD_COLOR)
+                self.__canvas.create_oval((column, row), (column + DISK_SIZE, row + DISK_SIZE), fill=EMPTY_SPACE_COLOR)
 
-    def callback(self, event):
-        last_turn = self.game.get_last_move()
-        if hasattr(event, 'x'):
-            column = self.calculating_column(event.x)
-            if last_turn is None:
-                if self.player != self.game.PLAYER_ONE:
-                    messagebox.showinfo("Can't do this", 'what')
-                    return
-            elif self.game.get_player_at(last_turn[0], last_turn[1]) == self.player:
-                messagebox.showinfo("Can't do this", 'what')
+    def place_disk(self, event):
+        last_turn = self.__game.get_last_move()
+        column = self.calculating_column(event.x)
+        if self.__ai is not None:
+            messagebox.showinfo("You're not playing!", 'AI game, cannot be controlled by player')
+        elif last_turn is None:
+            if self._player != self.__game.PLAYER_ONE:
+                messagebox.showinfo("Not your turn!", 'Wait for other player to make move')
                 return
-        elif len(event) > 1:
-            column = int(event[-1])
-        else:
-            column = int(event)
+        elif self.__game.get_player_at(last_turn[0], last_turn[1]) == self._player:
+            messagebox.showinfo("Not your turn!", 'Wait for other player to make move')
+            return
 
         try:
-            self.game.make_move(column)
+            self.__game.make_move(column)
         except ValueError:
             messagebox.showinfo('illegal move', 'try again!')
 
-        if hasattr(event, 'x') or len(event) == 1:
-            self.communicator.send_message("Put disk in column {0}".format(column))
+        self._place_disk_on_board()
+        self.__communicator.send_message("Put disk in column {0}".format(column))
+        self._handle_end_game()
+        self.__game.set_current_player()
 
-        color = self.get_color(self.game.get_current_player())
-        start_column, start_row = self.get_coordinates(self.game.get_last_move())
-        disk = self.canvas.create_oval((start_column, start_row),
-                                       (start_column + DISK_SIZE, start_row + DISK_SIZE), fill=color)
-        self.dict_of_disks[start_column, start_row] = disk
+    def place_disk_ai(self, column):
 
-        if self.game.get_winner() is not None:
-            label=Label(self.root, text=WIN_MSG.format(self.game.get_winner() + 1))
-            label.pack()
-            for coord in self.game.get_winning_path():
-                disk = self.dict_of_disks[self.get_coordinates(coord)]
-                self.canvas.itemconfig(disk, fill="red")
-            messagebox.showinfo('Game over!', WIN_MSG.format(self.game.get_winner() + 1))
-            self.canvas.delete(self.list_of_items[0])
-            self.list_of_items.pop()
+        self.__game.make_move(int(column))
+        self._place_disk_on_board()
+        self.__communicator.send_message("Put disk in column {0}".format(column))
+        self._handle_end_game()
+        self.__game.set_current_player()
 
-        if self.ai is None:
-            self.game.set_current_player()
+    def place_disk_message(self, message):
 
-        if self.ai is not None:
-            if self.game.get_player_at(self.game.get_last_move()[0], self.game.get_last_move()[1])\
-                != self.player:
-                self.game.set_current_player()
-                self.ai.find_legal_move(self.game, self.callback)
+        column = int(message[-1])
+        self.__game.make_move(int(column))
+        self._place_disk_on_board()
+        self._handle_end_game()
+        self.__game.set_current_player()
+
+        if self.__ai is not None:
+            self.__ai.find_legal_move(self.__game, self.place_disk_ai)
+
+    def _handle_end_game(self):
+
+        status = self.__game.get_winner()
+
+        if status is not None:
+            if status == self.__game.PLAYER_ONE or status == self.__game.PLAYER_TWO:
+                for coord in self.__game.get_winning_path():
+                    disk = self.__dict_of_disks[self._get_coordinates(coord)]
+                    self.__canvas.itemconfig(disk, fill=WINNING_DISK_COLOR)
+                msg = WIN_MSG.format(status + 1)
             else:
-                self.game.set_current_player()
+                msg = 'Draw!'
 
-        # if not self.game.is_game_over():
-        #     self.canvas.delete(self.list_of_items[-1])
-        #     self.list_of_items.pop()
-        #     item = self.canvas.create_oval(
-        #         (self.calculating_column(event.x) * DISK_SIZE, 0,
-        #          self.calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
-        #         fill=self.get_color(self.game.get_current_player()))
-        #     self.list_of_items.append(item)
+            messagebox.showinfo('Game over!', msg)
+            self.__canvas.delete(self.__list_of_items[0])
+            self.__list_of_items.pop()
 
-    def get_color(self, current_player):
-        return COLOR_PLAYER1 if current_player == self.game.PLAYER_ONE else COLOR_PLAYER2
+
+    def _place_disk_on_board(self):
+        color = self._get_color(self.__game.get_current_player())
+        start_column, start_row = self._get_coordinates(self.__game.get_last_move())
+        disk = self.__canvas.create_oval((start_column, start_row),
+                                         (start_column + DISK_SIZE, start_row + DISK_SIZE), fill=color)
+        self.__dict_of_disks[start_column, start_row] = disk
+
+    def _get_color(self, current_player):
+        return COLOR_PLAYER_ONE if current_player == self.__game.PLAYER_ONE else COLOR_PLAYER_2
 
     def entering(self, event):
-        if not self.game.is_game_over():
-            item=self.canvas.create_oval((self.calculating_column(event.x),0,
-                                   self.calculating_column(event.x)+DISK_SIZE,DISK_SIZE),
-                                  fill=self.get_color(self.game.get_current_player()))
-            self.list_of_items.append(item)
+        if not self.__game.is_game_over():
+            item=self.__canvas.create_oval((self.calculating_column(event.x), 0,
+                                            self.calculating_column(event.x) + DISK_SIZE, DISK_SIZE),
+                                           fill=self._get_color(self.__game.get_current_player()))
+            self.__list_of_items.append(item)
 
     def move(self, event):
-        if not self.game.is_game_over():
-            self.canvas.delete(self.list_of_items[-1])
-            self.list_of_items.pop()
-            item = self.canvas.create_oval((self.calculating_column(event.x)*DISK_SIZE, 0,
-                                     self.calculating_column(event.x)*DISK_SIZE + DISK_SIZE, DISK_SIZE),
-                                    fill=self.get_color(self.game.get_current_player()))
-            self.list_of_items.append(item)
+        if not self.__game.is_game_over():
+            self.__canvas.delete(self.__list_of_items[-1])
+            self.__list_of_items.pop()
+            item = self.__canvas.create_oval((self.calculating_column(event.x) * DISK_SIZE, 0,
+                                              self.calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
+                                             fill=self._get_color(self.__game.get_current_player()))
+            self.__list_of_items.append(item)
 
     def calculating_column(self, x):
         return math.floor(x/DISK_SIZE)
 
     def out_of(self, event):
-        if not self.game.is_game_over():
-            self.canvas.delete(self.list_of_items[-1])
-            self.list_of_items.pop()
+        if not self.__game.is_game_over():
+            self.__canvas.delete(self.__list_of_items[-1])
+            self.__list_of_items.pop()
 
-    def get_coordinates(self, coord_tuple):
+    def _get_coordinates(self, coord_tuple):
         return coord_tuple[0] * DISK_SIZE, coord_tuple[1] * DISK_SIZE + DISK_SIZE
 
 
 def check_args(arg_list):
-    if arg_list[1] not in ['ai', 'human']:
+    if len(arg_list) < 3 or len(arg_list) > 4 or arg_list[PLAYER_TYPE_ARGUMENT] not in ['ai', 'human'] or \
+        not arg_list[PORT_ARGUMENT].isdigit() or \
+                    int(arg_list[PORT_ARGUMENT]) < 0 or int(arg_list[PORT_ARGUMENT]) > MAXIMUM_PORT_NUMBER:
+        print('Illegal program arguments')
         return False
 
     return True
@@ -146,10 +170,10 @@ def main(argv):
     game = Game()
     root = Tk()
 
-    player_type = argv[1]
-    port = int(argv[2])
+    player_type = argv[PLAYER_TYPE_ARGUMENT]
+    port = int(argv[PORT_ARGUMENT])
     if len(argv) == 4:
-        ip = argv[3]
+        ip = argv[IP_ARGUMENT]
         client = True
     if player_type == 'ai':
         ai = AI()

@@ -15,7 +15,7 @@ class AI:
         if game_copy.get_last_move() is not None:
             turn=self.find_legal_move_helper(g,set_of_possible_turns)
         else:
-            turn=math.ceil(g.NUM_COLUMNS/2)
+            turn=math.floor(g.NUM_COLUMNS/2)
             self.make_move_on_Exp_desk(turn,game_copy)
         func(str(turn))
     def find_legal_move_helper(self, g,set_of_possible_turns):
@@ -101,7 +101,7 @@ class AI:
         return turns_for_three_in_a_row_blocking,turns_for_four_in_a_row_blocking
 
     def finding_diference_betwen_columns(self,column, g):
-        middle_column=math.ceil(len(g.get_board()[0])/2)
+        middle_column=math.floor(len(g.get_board()[0])/2)
         return abs(middle_column-column)
 
     def make_move_on_Exp_desk(self, column,game_copy):
