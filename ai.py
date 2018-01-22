@@ -10,6 +10,7 @@ class AI:
 
     def find_legal_move(self, g, func, timeout=None):
         self.__experimental_board=copy.deepcopy(g.get_board())
+        
         set_of_possible_turns=[]
         for num_column,column in enumerate(self.__experimental_board):
             if None in column:
@@ -17,7 +18,7 @@ class AI:
         if self.__last_move is not None:
             turn=self.find_legal_move_helper(g,set_of_possible_turns)
         else:
-            turn=math.ceil(g.NUM_COLUMNS/2)
+            turn=math.floor(g.NUM_COLUMNS/2)
             self.make_move_on_Exp_desk(turn,g)
         func(str(turn))
     def find_legal_move_helper(self,g,set_of_possible_turns):
@@ -39,24 +40,30 @@ class AI:
                     value_of_turn+=500
 
             for path in paths:
+                ai_path_sequense=[]
                 counter_for_path=0
                 for i,disk in enumerate(path):
                     if self.__experimental_board[disk[0]][disk[1]] == g.get_current_player():
+                        ai_path_sequense.append(disk)
                         if i != len(path) - 1:
                             if self.__experimental_board[path[i+1][0]][path[i+1][1]]==g.get_current_player():
                                 counter_for_path=2
+                                ai_path_sequense.append(path[i+1])
                                 if i!=len(path)-2:
                                     if self.__experimental_board[path[i+2][0]][path[i+2][1]]==g.get_current_player():
                                         counter_for_path=3
+                                        ai_path_sequense.append(path[i+2])
                                         if i!=len(path)-3:
                                             if self.__experimental_board[path[i+3][0]][path[i+3][1]]==g.get_current_player():
                                                 counter_for_path=4
 
 
                 if counter_for_path==2:
-                    value_of_turn+=10
+                    if self.__last_move in ai_path_sequense:
+                        value_of_turn+=10
                 if counter_for_path==3:
-                    value_of_turn+=100
+                    if self.__last_move in ai_path_sequense:
+                        value_of_turn+=100
                 if counter_for_path==4:
                     value_of_turn+=1000
             if value_of_turn>best_turn_value:
@@ -98,7 +105,7 @@ class AI:
         return turns_for_three_in_a_row_blocking,turns_for_four_in_a_row_blocking
 
     def finding_diference_betwen_columns(self,column):
-        middle_column=math.ceil(len(self.__experimental_board[0])/2)
+        middle_column=math.floor(len(self.__experimental_board[0])/2)
         return abs(middle_column-column)
 
     def make_move_on_Exp_desk(self, column,g):
