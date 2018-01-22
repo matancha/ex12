@@ -5,9 +5,9 @@ class Game:
     PLAYER_ONE = 0
     PLAYER_TWO = 1
     DRAW = 2
-    NUM_COLUMN=8
-    NUM_ROWS=6
-    ERROR_ILLEGAL_MOVE= "illegal move"
+    NUM_COLUMNS = 7
+    NUM_ROWS = 6
+    ERROR_ILLEGAL_MOVE = "illegal move"
     WINNING_STREAK = 4
     RIGHT_DIAG_DIRECTION = (-1, 1)
     LEFT_DIAG_DIRECTION = (-1,-1)
@@ -25,6 +25,9 @@ class Game:
     def get_winning_path(self):
         return self.__winning_path
 
+    def get_board(self):
+        return self.board
+
     def is_game_over(self):
         return self.__winner
 
@@ -38,7 +41,7 @@ class Game:
                 break
             if row == 0:
                 #TODO: New error object
-                raise Exception(Game.ERROR_ILLEGAL_MOVE)
+                    raise ValueError(Game.ERROR_ILLEGAL_MOVE)
 
     def get_winner(self):
         paths = self.get_possible_paths()
@@ -107,13 +110,13 @@ class Game:
 
     def set_current_player(self):
         if self.get_current_player()==Game.PLAYER_ONE:
-            self.current_player=Game.PLAYER_TWO
+            self.current_player = Game.PLAYER_TWO
         else:
-            self.current_player=Game.PLAYER_ONE
+            self.current_player = Game.PLAYER_ONE
 
     def create_board(self):
         board = []
-        for column in range(Game.NUM_COLUMN):
+        for column in range(Game.NUM_COLUMNS):
             row = []
             for rows in range(Game.NUM_ROWS):
                 row.append(None)

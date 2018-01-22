@@ -1,15 +1,17 @@
 import game
 import copy
 import math
+
+
 class AI:
     def __init__(self):
         self.__last_move=None
         self.__experimental_board=None
 
     def find_legal_move(self, g, func, timeout=None):
-        self.__experimental_board=copy.deepcopy(g.get_curent_board())
+        self.__experimental_board=copy.deepcopy(g.get_board())
         set_of_possible_turns=[]
-        for num_column,column in enumerate(g.__experimental_board):
+        for num_column,column in enumerate(self.__experimental_board):
             if None in column:
                 set_of_possible_turns.append(num_column)
         if self.__last_move is not None:
@@ -17,7 +19,7 @@ class AI:
         else:
             turn=math.ceil(g.NUM_COLUMNS/2)
             self.make_move_on_Exp_desk(turn,g)
-        func(turn)
+        func(str(turn))
     def find_legal_move_helper(self,g,set_of_possible_turns):
         best_turn=None
         best_turn_value=-g.NUM_COLUMNS
@@ -39,7 +41,7 @@ class AI:
             for path in paths:
                 counter_for_path=0
                 for i,disk in enumerate(path):
-                    if self.__experimental_board[disk[0]][disk[1]] == g.get_curent_player():
+                    if self.__experimental_board[disk[0]][disk[1]] == g.get_current_player():
                         if i != len(path) - 1:
                             if self.__experimental_board[path[i+1][0]][path[i+1][1]]==g.get_current_player():
                                 counter_for_path=2
@@ -66,7 +68,7 @@ class AI:
         return best_turn
 
     def opponent_player_num(self,g):
-        if g.get_current_player==g.PLAYER_ONE:
+        if g.get_current_player()==g.PLAYER_ONE:
             return g.PLAYER_TWO
         return g.PLAYER_ONE
 
@@ -102,6 +104,6 @@ class AI:
     def make_move_on_Exp_desk(self, column,g):
         for row in range(len(self.__experimental_board[column]) - 1 ,-1,-1):
             if self.__experimental_board[column][row] is None:
-                self.__experimental_board[column][row] = g.get_current_player
+                self.__experimental_board[column][row] = g.get_current_player()
                 self.__last_move =(column,row)
                 break
