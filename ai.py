@@ -19,7 +19,7 @@ class AI:
             #checkking for first turn
             turn=self.find_legal_move_helper(game_copy,set_of_possible_turns)
         else:
-            turn=math.ceil(g.NUM_COLUMNS/2)
+            turn=math.floor(g.NUM_COLUMNS/2)
             self.make_move_on_Exp_desk(turn,game_copy)
         func(str(turn))
     def find_legal_move_helper(self, g,set_of_possible_turns):
