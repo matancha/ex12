@@ -84,7 +84,7 @@ class AI:
             game_for_second_turn = copy.deepcopy(g)
             #check if after that turn doesn't appear winning turn and will block this turn
             #despite that he have good value,except turn that create four in a row sequense for ai
-            if self.check_the_second_turn(game_for_second_turn, g, turn) and value_of_turn<900:
+            if self.check_the_second_turn(game_for_second_turn, turn) and value_of_turn<900:
                 value_of_turn-=500
             if value_of_turn>best_turn_value:
                 best_turn_value=value_of_turn
@@ -92,11 +92,12 @@ class AI:
             g.set_board(g.get_last_move()[0], g.get_last_move()[1], None)
         return best_turn
 
-    def check_the_second_turn(self,game_for_second_turn,g,turn):
+    def check_the_second_turn(self, game_for_second_turn, turn):
         #this function checks if there is possibility to win to opponent
         #if he puts disk on last disk of ai
+        game_for_second_turn.set_current_player()
         self.make_move_on_Exp_desk(turn,game_for_second_turn)
-        if game_for_second_turn.get_winner()==self.opponent_player_num(g):
+        if game_for_second_turn.get_winner()==game_for_second_turn.get_current_player():
             return True
 
 
