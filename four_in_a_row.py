@@ -78,10 +78,13 @@ class GUI:
             self.__game.make_move(column)
         except ValueError:
             messagebox.showinfo('illegal move', 'try again!')
+            return
 
         self._place_disk_on_board()
         self.__communicator.send_message("Put disk in column {0}".format(column))
-        self._handle_end_game()
+        if self.__game.get_winner() is not None:
+            self._handle_end_game()
+            return
         self.__game.set_current_player()
 
     def play_turn_ai(self, column):
@@ -89,7 +92,9 @@ class GUI:
         self.__game.make_move(int(column))
         self._place_disk_on_board()
         self.__communicator.send_message("Put disk in column {0}".format(column))
-        self._handle_end_game()
+        if self.__game.get_winner() is not None:
+            self._handle_end_game()
+            return
         self.__game.set_current_player()
 
     def play_turn_message(self, message):
@@ -97,7 +102,9 @@ class GUI:
         column = int(message[-1])
         self.__game.make_move(int(column))
         self._place_disk_on_board()
-        self._handle_end_game()
+        if self.__game.get_winner() is not None:
+            self._handle_end_game()
+            return
         self.__game.set_current_player()
 
         if self.__ai is not None:
@@ -117,8 +124,9 @@ class GUI:
                 msg = DRAW_MSG
 
             messagebox.showinfo(GAME_OVER_TITLE, msg)
-            self.__canvas.delete(self.__list_of_items[0])
-            self.__list_of_items.pop()
+            if self.__list_of_items:
+                self.__canvas.delete(self.__list_of_items[0])
+                self.__list_of_items.pop()
 
     def _place_disk_on_board(self):
         color = self._get_color(self.__game.get_current_player())
@@ -151,8 +159,9 @@ class GUI:
 
     def out_of_canvas(self, event):
         if not self.__game.is_game_over():
-            self.__canvas.delete(self.__list_of_items[-1])
-            self.__list_of_items.pop()
+            if self.__list_of_items:
+                self.__canvas.delete(self.__list_of_items[-1])
+                self.__list_of_items.pop()
 
     def _get_coordinates(self, coord_tuple):
         return coord_tuple[0] * DISK_SIZE, coord_tuple[1] * DISK_SIZE + DISK_SIZE
@@ -162,7 +171,7 @@ def check_args(arg_list):
     if len(arg_list) < 3 or len(arg_list) > 4 or arg_list[PLAYER_TYPE_ARGUMENT] not in [AI_ARGUMENT, HUMAN_ARGUMENT] \
         or not arg_list[PORT_ARGUMENT].isdigit() or \
                     int(arg_list[PORT_ARGUMENT]) < 0 or int(arg_list[PORT_ARGUMENT]) > MAXIMUM_PORT_NUMBER:
-        print('Illegal program arguments')
+        print('Illegal program arguments.')
         return False
 
     return True
