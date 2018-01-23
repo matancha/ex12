@@ -104,7 +104,6 @@ class AI:
                 best_turn_value=value_of_turn
                 best_turn=turn
             g.set_board(g.get_last_move()[0], g.get_last_move()[1], None)
-        print(best_turn_value)
         if best_turn is None:
             best_turn=set_of_possible_turns[0]
         return best_turn
