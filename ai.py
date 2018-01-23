@@ -1,12 +1,25 @@
+#############################################################
+# FILE : ai.py
+# WRITERS : Matan Toledano , matancha , 313591935
+#           Ilya Bogov , molodoy , 342522471
+# EXERCISE : intro2cs ex12 2017-2018
+# DESCRIPTION: AI interface that plays four_in_a_row.
+#############################################################
+
 import copy
 import math
 
 
 class AI:
+    def __init__(self):
+        self.probably_dangerous_for_four = []
+        self.probably_dangerous_for_three = []
 
     def find_legal_move(self, g, func, timeout=None):
-    #this function find the best turn according to situatuion on the board and
-    #draw it on the tk
+        """
+        this function find the best turn according to situatuion on the board and
+        draw it on the tk
+        """
         set_of_possible_turns=[]
         #the function create copy of game to make all turns on copy
         #and not to change the real board
@@ -23,8 +36,10 @@ class AI:
             self.make_move_on_Exp_desk(turn,game_copy)
         func(str(turn))
     def find_legal_move_helper(self, g,set_of_possible_turns):
-        #this function find best turn according to
-        #preference in next order from most priority-driven to less
+        """
+        this function find best turn according to
+        preference in next order from most priority-driven to less
+        """
         #1)find turn for finish the game(four dsiks of ai in a row)
         #2)find how to block sequense of 4 disk of opponent
         #3)find turn to make sequense of ai disk 3 in a row
@@ -37,22 +52,21 @@ class AI:
         best_turn=None
         best_turn_value=-g.NUM_COLUMNS
         #to make sure that there will some turn
-        good_turns_list_for_blocking=self.finding_dangerous_paths_blocking_list(g)
+        self.finding_dangerous_paths_blocking_list(g)
         for turn in set_of_possible_turns:
             self.make_move_on_Exp_desk(turn,g)
             g.last_move=g.get_last_move()
             value_of_turn=0
             value_of_turn-=self.finding_diference_betwen_columns(turn, g)
             paths=g.get_possible_paths()
-            for turn_of_three_blocikng in good_turns_list_for_blocking[0]:
+            for turn_of_three_blocikng in self.probably_dangerous_for_three:
                 if turn_of_three_blocikng==g.get_last_move():
                     #checking of #4
                     value_of_turn+=50
-            for turn_of_four_blocking in good_turns_list_for_blocking[1]:
+            for turn_of_four_blocking in self.probably_dangerous_for_four:
                 if turn_of_four_blocking==g.get_last_move():
                     #checking of 2#
                     value_of_turn+=500
-
             for path in paths:
                 ai_path_sequense=[]
                 counter_for_path=0
@@ -90,11 +104,16 @@ class AI:
                 best_turn_value=value_of_turn
                 best_turn=turn
             g.set_board(g.get_last_move()[0], g.get_last_move()[1], None)
+        print(best_turn_value)
+        if best_turn is None:
+            best_turn=set_of_possible_turns[0]
         return best_turn
 
     def check_the_second_turn(self, game_for_second_turn, turn):
-        #this function checks if there is possibility to win to opponent
-        #if he puts disk on last disk of ai
+        """
+        this function checks if there is possibility to win to opponent
+        if he puts disk on last disk of ai
+        """
         game_for_second_turn.set_current_player()
         self.make_move_on_Exp_desk(turn,game_for_second_turn)
         if game_for_second_turn.get_winner()==game_for_second_turn.get_current_player():
@@ -102,13 +121,17 @@ class AI:
 
 
     def opponent_player_num(self,g):
-        #this function find number of opponent
+        """
+        this function find number of opponent
+        """
         if g.get_current_player()==g.PLAYER_ONE:
             return g.PLAYER_TWO
         return g.PLAYER_ONE
 
     def finding_dangerous_paths_blocking_list(self,game_copy):
-        #this function find all possible turns that will block sequenses of opponent 4 and 3 in a row
+        """
+        this function find all possible turns that will block sequenses of opponent 4 and 3 in a row
+        """
         opponent_number=self.opponent_player_num(game_copy)
         paths=game_copy.get_possible_paths()
         turns_for_three_in_a_row_blocking=[]
@@ -135,15 +158,24 @@ class AI:
                         if i!=0:
                             if game_copy.get_player_at(path[i - 1][0], path[i - 1][1]) is None:
                                 turns_for_three_in_a_row_blocking.append(path[i - 1])
-        return turns_for_three_in_a_row_blocking,turns_for_four_in_a_row_blocking
+        for turn in turns_for_three_in_a_row_blocking:
+            if turn not in self.probably_dangerous_for_three:
+                self.probably_dangerous_for_three.append(turn)
+        for turn in turns_for_four_in_a_row_blocking:
+            if turn not in self.probably_dangerous_for_four:
+                self.probably_dangerous_for_four.append(turn)
 
     def finding_diference_betwen_columns(self,column, g):
-        #find how far the turn from the middle
+        """
+        find how far the turn from the middle
+        """
         middle_column=math.ceil(len(g.get_board()[0])/2)
         return abs(middle_column-column)
 
     def make_move_on_Exp_desk(self, column,game_copy):
-        #this function for making moves on experimental boards to save current situation on original board
+        """
+        this function for making moves on experimental boards to save current situation on original board
+        """
         for row in range(len(game_copy.get_board()[column]) - 1 ,-1,-1):
             if game_copy.get_player_at(column, row) is None:
                 game_copy.set_board(column, row, game_copy.get_current_player())

@@ -1,3 +1,12 @@
+#############################################################
+# FILE : four_in_a_row.py
+# WRITERS : Matan Toledano , matancha , 313591935
+#           Ilya Bogov , molodoy , 342522471
+# EXERCISE : intro2cs ex12 2017-2018
+# DESCRIPTION: Runs the main flow of four_in_a_row in GUI
+# mode.
+#############################################################
+
 from tkinter import *
 import tkinter.messagebox as messagebox
 from game import Game
