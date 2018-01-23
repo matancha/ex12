@@ -38,9 +38,9 @@ class GUI:
         self.__canvas = Canvas(self.__root, bg=BACKGROUND_COLOR, height=(Game.NUM_ROWS + 1) * DISK_SIZE,
                                width=Game.NUM_COLUMNS * DISK_SIZE)
         self.__canvas.bind('<Button-1>', self.play_turn)
-        self.__canvas.bind("<Enter>", self.entering)
-        self.__canvas.bind("<Motion>", self.move)
-        self.__canvas.bind("<Leave>", self.out_of)
+        self.__canvas.bind("<Enter>", self.enter_canvas)
+        self.__canvas.bind("<Motion>", self.move_cursor)
+        self.__canvas.bind("<Leave>", self.out_of_canvas)
         self.__canvas.pack()
 
         self.__communicator.bind_action_to_message(self.play_turn_message)
@@ -62,7 +62,7 @@ class GUI:
 
     def play_turn(self, event):
         last_turn = self.__game.get_last_move()
-        column = self.calculating_column(event.x)
+        column = self._calculating_column(event.x)
         if self.__ai is not None:
             messagebox.showinfo("You're not playing!", 'AI game, cannot be controlled by player')
             return
@@ -130,26 +130,26 @@ class GUI:
     def _get_color(self, current_player):
         return COLOR_PLAYER_ONE if current_player == self.__game.PLAYER_ONE else COLOR_PLAYER_TWO
 
-    def entering(self, event):
+    def enter_canvas(self, event):
         if not self.__game.is_game_over():
-            item=self.__canvas.create_oval((self.calculating_column(event.x), 0,
-                                            self.calculating_column(event.x) + DISK_SIZE, DISK_SIZE),
+            item=self.__canvas.create_oval((self._calculating_column(event.x), 0,
+                                            self._calculating_column(event.x) + DISK_SIZE, DISK_SIZE),
                                            fill=self._get_color(self.__game.get_current_player()))
             self.__list_of_items.append(item)
 
-    def move(self, event):
+    def move_cursor(self, event):
         if not self.__game.is_game_over():
             self.__canvas.delete(self.__list_of_items[-1])
             self.__list_of_items.pop()
-            item = self.__canvas.create_oval((self.calculating_column(event.x) * DISK_SIZE, 0,
-                                              self.calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
+            item = self.__canvas.create_oval((self._calculating_column(event.x) * DISK_SIZE, 0,
+                                              self._calculating_column(event.x) * DISK_SIZE + DISK_SIZE, DISK_SIZE),
                                              fill=self._get_color(self.__game.get_current_player()))
             self.__list_of_items.append(item)
 
-    def calculating_column(self, x):
+    def _calculating_column(self, x):
         return math.floor(x/DISK_SIZE)
 
-    def out_of(self, event):
+    def out_of_canvas(self, event):
         if not self.__game.is_game_over():
             self.__canvas.delete(self.__list_of_items[-1])
             self.__list_of_items.pop()
