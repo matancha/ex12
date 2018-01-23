@@ -1,0 +1,44 @@
+matancha,molodoy
+313591935,342522471
+Matan Toledano,Ilya Bogov
+
+=============================================
+    =  README for ex12: Four in a Row  =
+=============================================
+
+==================
+=  Description:  =
+==================
+
+The exercise's purpose is to construct a four in a row game. The game is played on a board
+  between players so that every turn, one disk is added to a column that is not already full.
+  Once a player creates a streak of four consecutive disks horizontally, diagonally or vertically
+  he is declared the winner.
+
+Files:
+ai.py - artificial intelligence that determines the best move
+communicator.py - Class implementing networking in GUI
+game.py - Class implementing four in a row game logic
+four_in_a_row.py - Contains GUI class and main function
+
+
+======================
+=  Special Comments  =
+======================
+
+AI Algorithm:
+  Algorithm of ai in the next order:
+  #1)find turn for finish the game(four disks of ai in a row)
+  #2)find how to block sequence of 4 disk of opponent
+  #3)find turn to make sequence of ai disk 3 in a row
+  #4)find how to block sequence of opponent 3 in a row
+  #5) find how to create sequence 2 in a row
+  #6)check if the turn close to the middle of the board
+  #7)in the end it checks if after best turn there is a situation that
+  #opponent will win if he puts his disk on the disk that was put by ai in the last turn
+  #for each of checking there is a value according to importance of it
+
+  the most important for ai is victory.
+  according to this algorithm the turn will contains most possible number
+  of lengthening of the sequence,or blocking and lengthening in the best way
+  and after that will be checked if after that turn there is no winning turn for opponent.
