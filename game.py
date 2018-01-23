@@ -7,7 +7,7 @@ class Game:
     DRAW = 2
     NUM_COLUMNS = 7
     NUM_ROWS = 6
-    ERROR_ILLEGAL_MOVE = "illegal move"
+    ERROR_ILLEGAL_MOVE = "Illegal move."
     WINNING_STREAK = 4
     RIGHT_DIAG_DIRECTION = (-1, 1)
     LEFT_DIAG_DIRECTION = (-1,-1)
@@ -38,16 +38,13 @@ class Game:
         return self.__winner
 
     def make_move(self, column):
-        if self.__winner:
-            raise Exception(Game.ERROR_ILLEGAL_MOVE)
+        if self.is_game_over() or column not in range(1, Game.NUM_COLUMNS+1) or self.__board[column][0] is not None:
+            raise ValueError(Game.ERROR_ILLEGAL_MOVE)
         for row in range(len(self.__board[column])-1, -1, -1):
             if self.__board[column][row] is None:
                 self.__board[column][row] = self.get_current_player()
                 self.__last_move =(column,row)
                 break
-            if row == 0:
-                #TODO: New error object
-                    raise ValueError(Game.ERROR_ILLEGAL_MOVE)
 
     def get_winner(self):
         paths = self.get_possible_paths()
@@ -131,7 +128,7 @@ class Game:
 
 
 # game = Game()
-# game.make_move(3)
+# game.make_move(6)
 # while game.get_winner() is None:
 #  game.set_current_player()
 #  for row in game.board:
